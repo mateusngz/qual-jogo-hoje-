@@ -1,11 +1,12 @@
 /* Componentes de interface e páginas (sem dependência de framework). */
 import {VIBES} from './vibes.js';
+import {automaticCover} from './api.js';
 export const STATUSES={backlog:'No backlog',jogando:'Jogando',zerado:'Zerado',abandonado:'Abandonado'};
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export const safeImage=url=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?escapeHTML(u.href):'';}catch{return '';}};
 export const fmtHours=min=>`${(min/60).toLocaleString('pt-BR',{maximumFractionDigits:1})}h`;
 export const fmtDate=value=>new Date(value).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
-export function artwork(game,extra=''){const src=safeImage(game.cover);return `<div class="artwork ${extra}">${src?`<img src="${src}" alt="Capa de ${escapeHTML(game.name)}" loading="lazy" onerror="this.remove()">`:`<span class="art-placeholder" aria-hidden="true">✦</span>`}</div>`;}
+export function artwork(game,extra=''){const src=safeImage(game.cover||automaticCover(game.name));return `<div class="artwork ${extra}">${src?`<img src="${src}" alt="Capa de ${escapeHTML(game.name)}" loading="lazy" onerror="this.remove()">`:`<span class="art-placeholder" aria-hidden="true">✦</span>`}</div>`;}
 export const vibeChip=(id)=>`<span class="vibe-chip">${VIBES[id]?.icon||'✧'} ${escapeHTML(VIBES[id]?.label||'Sem vibe')}</span>`;
 export function emptyState(icon,title,desc,button='Adicionar meu primeiro jogo'){return `<div class="empty"><div class="empty-icon">${icon}</div><h3>${title}</h3><p>${desc}</p><button type="button" class="btn btn-primary" data-action="add-game">＋ ${button}</button></div>`;}
 export function gameCard(game,minutes){return `<button class="game-card" type="button" data-action="details" data-id="${escapeHTML(game.id)}">${artwork(game)}<div class="game-card-info"><span class="mini-status ${escapeHTML(game.status)}">${STATUSES[game.status]||'Backlog'}</span><h3>${escapeHTML(game.name)}</h3><div class="card-bottom">${vibeChip(game.vibe)}<span>${fmtHours(minutes)}</span></div></div></button>`;}
