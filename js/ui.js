@@ -1,6 +1,6 @@
 /* Componentes de interface e páginas (sem dependência de framework). */
-import {VIBES} from './vibes.js';
-import {automaticCover} from './api.js';
+import {VIBES} from './vibes.js?release=8';
+import {automaticCover} from './api.js?release=8';
 export const STATUSES={backlog:'No backlog',jogando:'Jogando',zerado:'Zerado',abandonado:'Abandonado'};
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export const safeImage=url=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?escapeHTML(u.href):'';}catch{return '';}};
