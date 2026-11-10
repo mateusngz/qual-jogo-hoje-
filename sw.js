@@ -1,6 +1,6 @@
 /* Cache do app shell; RAWG nunca é interceptada. Assets externos são best-effort. */
-const CACHE='qual-jogo-hoje-shell-v8', IMAGES='qual-jogo-hoje-images-v1';
-const SHELL=['./','./index.html','./styles.css','./config.js','./js/main.js?release=8','./js/ui.js?release=8','./js/api.js?release=8','./js/storage.js?release=8','./js/vibes.js?release=8','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE='qual-jogo-hoje-shell-v9', IMAGES='qual-jogo-hoje-images-v1';
+const SHELL=['./','./index.html','./styles.css','./config.js','./js/main.js?release=9','./js/ui.js?release=9','./js/api.js?release=9','./js/storage.js?release=9','./js/vibes.js?release=9','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>![CACHE,IMAGES].includes(k)).map(k=>caches.delete(k)))),self.clients.claim()]));});
 self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET')return;
