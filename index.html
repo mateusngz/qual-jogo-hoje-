@@ -38,21 +38,21 @@
   <script>
     // Migração única do cache antigo do PWA. Preserva jogos e sessões do localStorage.
     (function(){
-      const release='qjh-repair-v8';
+      const release='qjh-repair-v9';
       if(sessionStorage.getItem(release))return;
       sessionStorage.setItem(release,'1');
       if(!('serviceWorker' in navigator))return;
       Promise.all([
         navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(reg=>reg.unregister()))),
         ('caches' in window)?caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('qual-jogo-hoje-')).map(k=>caches.delete(k)))):Promise.resolve()
-      ]).then(()=>{ const u=new URL(location.href);u.searchParams.set('release','8');location.replace(u.href); }).catch(()=>{});
+      ]).then(()=>{ const u=new URL(location.href);u.searchParams.set('release','9');location.replace(u.href); }).catch(()=>{});
     })();
     // Mesmo com código antigo, um formulário de jogo nunca deve virar parâmetros na URL.
     document.addEventListener('submit',function(e){if(e.target?.id==='game-form')e.preventDefault();},true);
   </script>
   <script src="./config.js"></script>
   <script type="module">
-    import('./js/main.js?release=8').catch(error=>{
+    import('./js/main.js?release=9').catch(error=>{
       console.error('Falha ao iniciar Qual jogo hoje?',error);
       document.querySelector('#app-content').innerHTML='<section style="padding:3rem;color:#f5f2ff"><h1>Não foi possível iniciar o app</h1><p>O navegador está usando arquivos antigos. Atualize a página ou abra em uma janela privativa.</p></section>';
     });
