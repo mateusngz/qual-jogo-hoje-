@@ -36,6 +36,90 @@ async function request(path,query={},signal){
  if(!res.ok)throw Error(`Falha na RAWG (${res.status}). Tente novamente.`);
  try{return await res.json();}catch{throw Error('A RAWG retornou dados inválidos.');}
 }
-export async function searchGames(term,signal){const q=term.trim().toLowerCase();if(q.length<2)return [];const key=`search:${q}`,cached=getCache(key);if(cached)return cached;if(!hasApiKey())return DEMO.filter(g=>g.name.toLowerCase().includes(q)).map(g=>({id:g.id,name:g.name,image:g.cover,released:'',genres:g.genres,demo:true})).slice(0,8);const body=await request('/games',{search:q,page_size:8},signal);const games=(body.results||[]).map(g=>({id:g.id,name:g.name,image:g.background_image,released:g.released,genres:(g.genres||[]).map(x=>x.name)}));setCache(key,games);return games;}
-export async function gameDetails(id,signal){if(isDemoId(id)){const game=DEMO.find(g=>g.id===id);if(!game)throw Error('Jogo não encontrado.');return {...game};}const key=`details:${id}`,cached=getCache(key);if(cached)return cached;const g=await request(`/games/${encodeURIComponent(id)}`,{},signal);const game={rawgId:g.id,name:g.name||'',cover:g.background_image||'',genres:(g.genres||[]).map(x=>x.name),tags:(g.tags||[]).map(x=>x.name).slice(0,30),description:g.description_raw||'',playtime:Number(g.playtime)||0};setCache(key,game);return game;}
 
+// Busca ampliada via CheapShark (catálogo de jogos de PC): API pública com CORS, sem chave.
+// Mantemos RAWG quando configurada e o catálogo demonstrativo quando a rede falha.
+// Não consultamos preços nem usamos links de afiliado.
+const CHEAPSHARK='https://www.cheapshark.com/api/1.0/games';
+const cheapMemory=new Map();
+const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const demoMatches=q=>DEMO.filter(g=>normalize(g.name).includes(normalize(q))).map(g=>({
+  id:g.id,name:g.name,image:g.cover,released:'',genres:g.genres,source:'offline'
+}));
+function cheapRow(row){
+  const appId=/^\d+$/.test(String(row.steamAppID||''))?String(row.steamAppID):'';
+  const name=String(row.external||'').trim();
+  return {id:'cheap-'+String(row.gameID),name,
+    image:appId?`https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`:(row.thumb||automaticCover(name)),
+    released:'',genres:[],source:'cheapshark',steamAppID:appId};
+}
+async function searchCheap(q,signal){
+  const url=`${CHEAPSHARK}?title=${encodeURIComponent(q)}&limit=45`;
+  let response;
+  try{response=await fetch(url,{signal,headers:{Accept:'application/json'}});}
+  catch(err){if(err.name==='AbortError')throw err;throw Error('Busca online indisponível no momento.');}
+  if(response.status===429)throw Error('Muitas buscas seguidas. Aguarde um pouco e tente novamente.');
+  if(!response.ok)throw Error('A pesquisa online está temporariamente indisponível.');
+  const rows=await response.json();
+  if(!Array.isArray(rows))throw Error('Resposta inesperada da busca de jogos.');
+  return rows.filter(x=>x&&x.gameID&&x.external).map(cheapRow);
+}
+function mergeResults(q,lists){
+  const seen=new Set();
+  const rank=g=>{const n=normalize(g.name),t=normalize(q);return n===t?0:n.startsWith(t)?1:2;};
+  return lists.flat().filter(g=>{const n=normalize(g.name);if(!n||seen.has(n))return false;seen.add(n);return true;})
+    .sort((a,b)=>rank(a)-rank(b)).slice(0,32);
+}
+export async function searchGames(term,signal){
+  const q=String(term||'').trim();
+  if(q.length<2)return [];
+  const key='search-v2:'+normalize(q),cached=getCache(key);
+  if(cached)return cached;
+  const local=demoMatches(q);
+  let online=[],failure=null;
+  // RAWG é opcional: não bloquear a busca gratuita se ela falhar.
+  if(hasApiKey()){
+    try{const body=await request('/games',{search:q,page_size:25},signal);
+      online=(body.results||[]).map(g=>({id:String(g.id),name:g.name,image:g.background_image,
+        released:g.released,genres:(g.genres||[]).map(x=>x.name),source:'rawg'}));
+    }catch(e){if(e.name==='AbortError')throw e;failure=e;}
+  }
+  try{const cheap=await searchCheap(q,signal);online.push(...cheap);
+    for(const game of cheap)cheapMemory.set(game.id,game);
+  }catch(e){if(e.name==='AbortError')throw e;failure=e;}
+  const games=mergeResults(q,[local,online]);
+  if(!games.length&&failure)throw Error(failure.message+' Você ainda pode cadastrar manualmente.');
+  if(online.length)setCache(key,games);
+  return games;
+}
+export async function gameDetails(id,signal){
+  if(isDemoId(id)){
+    const game=DEMO.find(g=>g.id===id);
+    if(!game)throw Error('Jogo não encontrado.');
+    return {...game};
+  }
+  if(String(id).startsWith('cheap-')){
+    const key='cheap-detail:'+id;
+    let row=cheapMemory.get(id)||getCache(key);
+    if(!row){
+      const response=await fetch(`${CHEAPSHARK}?id=${encodeURIComponent(String(id).slice(6))}`,{signal});
+      if(!response.ok)throw Error('Não foi possível carregar os dados. Pesquise novamente.');
+      const body=await response.json();
+      row=cheapRow({gameID:String(id).slice(6),external:body.info?.title,
+        steamAppID:body.info?.steamAppID,thumb:body.info?.thumb});
+    }
+    if(!row?.name)throw Error('Jogo não encontrado. Pesquise novamente.');
+    setCache(key,row);
+    const demo=DEMO.find(g=>normalize(g.name)===normalize(row.name));
+    return {rawgId:null,name:row.name,cover:row.image||automaticCover(row.name),
+      genres:demo?.genres||[],tags:demo?.tags||[],description:demo?.description||'',
+      playtime:demo?.playtime||0,vibe:demo?.vibe||'historia'};
+  }
+  const key='details:'+id,cached=getCache(key);
+  if(cached)return cached;
+  const g=await request(`/games/${encodeURIComponent(id)}`,{},signal);
+  const game={rawgId:g.id,name:g.name||'',cover:g.background_image||'',
+    genres:(g.genres||[]).map(x=>x.name),tags:(g.tags||[]).map(x=>x.name).slice(0,30),
+    description:g.description_raw||'',playtime:Number(g.playtime)||0};
+  setCache(key,game);return game;
+}
