@@ -1,0 +1,6 @@
+{
+ "name":"Qual jogo hoje?","short_name":"Qual jogo?","description":"Decida o que jogar, organize seu backlog e acompanhe suas sessões.",
+ "id":"./","start_url":"./?source=pwa","scope":"./","display":"standalone","background_color":"#10111c","theme_color":"#10111c",
+ "lang":"pt-BR","categories":["games","entertainment","productivity"],
+ "icons":[{"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+}
