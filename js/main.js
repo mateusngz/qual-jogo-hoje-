@@ -1,8 +1,8 @@
 /* Controlador: eventos, navegação, sorteio, timer, formulários e PWA. */
-import {getData,getGame,saveGame,deleteGame,saveSession,deleteSession,saveTimer,exportData,importData} from './storage.js?release=8';
-import {searchGames,gameDetails,hasApiKey,isDemoId,automaticCover} from './api.js?release=8';
-import {suggestVibe,VIBES} from './vibes.js?release=8';
-import {home,library,stats,settings,gameModal,detailModal,escapeHTML} from './ui.js?release=8';
+import {getData,getGame,saveGame,deleteGame,saveSession,deleteSession,saveTimer,exportData,importData} from './storage.js?release=9';
+import {searchGames,gameDetails,hasApiKey,isDemoId,automaticCover} from './api.js?release=9';
+import {suggestVibe,VIBES} from './vibes.js?release=9';
+import {home,library,stats,settings,gameModal,detailModal,escapeHTML} from './ui.js?release=9';
 const app=document.querySelector('#app-content'),modal=document.querySelector('#modal-root');
 const state={page:'inicio',time:60,vibe:'historia',suggestionId:null,matchLabel:'',lastSuggested:null,filterStatus:'todos',filterVibe:'todos',filterSearch:''};
 let debounce,controller,searchCounter=0,deferredInstall=null,tickId,modalReturnFocus=null;
