@@ -1,6 +1,6 @@
 /* Controlador: eventos, navegação, sorteio, timer, formulários e PWA. */
 import {getData,getGame,saveGame,deleteGame,saveSession,deleteSession,saveTimer,exportData,importData} from './storage.js';
-import {searchGames,gameDetails,hasApiKey,isDemoId} from './api.js';
+import {searchGames,gameDetails,hasApiKey,isDemoId,automaticCover} from './api.js';
 import {suggestVibe,VIBES} from './vibes.js';
 import {home,library,stats,settings,gameModal,detailModal,escapeHTML} from './ui.js';
 const app=document.querySelector('#app-content'),modal=document.querySelector('#modal-root');
@@ -20,7 +20,7 @@ function viewGame(id){const game=getGame(id);if(!game)return;modalReturnFocus=do
 function saveGameForm(form){guard(()=>{if(!form.reportValidity())return;const game=fieldsToGame(form);saveGame(game);const stored=getGame(game.id);if(!stored)throw Error('Não foi possível confirmar o jogo salvo.');closeModal();render();toast(`✓ ${game.name} adicionado à biblioteca!`);});}
 function fieldsToGame(form){const fd=new FormData(form);const csv=k=>String(fd.get(k)||'').split(',').map(x=>x.trim()).filter(Boolean);const name=String(fd.get('name')||'').trim();if(!name)throw Error('Informe o nome do jogo.');
  const old=getGame(String(fd.get('id'))) || {};
- const cover=String(fd.get('cover')||'').trim();if(cover&&!/^https?:\/\//i.test(cover))throw Error('A capa precisa ter um endereço http(s).');
+ const cover=String(fd.get('cover')||'').trim()||automaticCover(name);if(cover&&!/^https?:\/\//i.test(cover))throw Error('A capa precisa ter um endereço http(s).');
  const playtime=Number(fd.get('playtime'));if(!Number.isFinite(playtime)||playtime<0||playtime>10000)throw Error('Tempo estimado inválido.');
  return {...old,id:old.id||uid(),rawgId:fd.get('rawgId')||null,name,cover,genres:csv('genres'),tags:csv('tags'),description:String(fd.get('description')||''),playtime,vibe:fd.get('vibe')||'historia',status:fd.get('status')||'backlog',notes:String(fd.get('notes')||''),createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};}
 function candidateGames(){return getData().games.filter(g=>['backlog','jogando'].includes(g.status));}
