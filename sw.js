@@ -1,5 +1,5 @@
 /* Cache do app shell; RAWG nunca é interceptada. Assets externos são best-effort. */
-const CACHE='qual-jogo-hoje-shell-v2', IMAGES='qual-jogo-hoje-images-v1';
+const CACHE='qual-jogo-hoje-shell-v3', IMAGES='qual-jogo-hoje-images-v1';
 const SHELL=['./','./index.html','./styles.css','./config.js','./js/main.js','./js/ui.js','./js/api.js','./js/storage.js','./js/vibes.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>![CACHE,IMAGES].includes(k)).map(k=>caches.delete(k)))),self.clients.claim()]));});
@@ -7,6 +7,5 @@ self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='G
  if(new URL(req.url).origin!==self.location.origin){if(req.destination==='image'){event.respondWith((async()=>{const cache=await caches.open(IMAGES);const cached=await cache.match(req);if(cached)return cached;try{const res=await fetch(req);if(res.ok||res.type==='opaque')cache.put(req,res.clone());return res;}catch{return Response.error();}})());}return;}
  event.respondWith((async()=>{const cache=await caches.open(CACHE);const cached=await cache.match(req,{ignoreSearch:req.mode==='navigate'});
  if(req.mode==='navigate'){try{const res=await fetch(req);if(res.ok)cache.put('./index.html',res.clone());return res;}catch{return cached||await cache.match('./index.html');}}
- if(cached)return cached;
- try{const res=await fetch(req);if(res.ok)cache.put(req,res.clone());return res;}catch{return Response.error();}
+ try{const res=await fetch(req);if(res.ok){cache.put(req,res.clone());return res;}return cached||res;}catch{return cached||Response.error();}
  })());});
