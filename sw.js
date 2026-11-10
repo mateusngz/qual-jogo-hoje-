@@ -1,5 +1,5 @@
 /* Cache do app shell; RAWG nunca é interceptada. Assets externos são best-effort. */
-const CACHE='qual-jogo-hoje-shell-v3', IMAGES='qual-jogo-hoje-images-v1';
+const CACHE='qual-jogo-hoje-shell-v4', IMAGES='qual-jogo-hoje-images-v1';
 const SHELL=['./','./index.html','./styles.css','./config.js','./js/main.js','./js/ui.js','./js/api.js','./js/storage.js','./js/vibes.js','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>![CACHE,IMAGES].includes(k)).map(k=>caches.delete(k)))),self.clients.claim()]));});
