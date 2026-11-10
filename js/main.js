@@ -17,7 +17,7 @@ function updateModal(content){modal.innerHTML=content;document.body.classList.ad
 function closeModal(){modal.innerHTML='';document.body.classList.remove('modal-open');if(controller)controller.abort();clearTimeout(debounce);clearInterval(tickId);modalReturnFocus?.focus?.();modalReturnFocus=null;}
 function addGame(existing=null){modalReturnFocus=document.activeElement;updateModal(gameModal(existing));const form=modal.querySelector('#game-form');if(form)form.addEventListener('submit',event=>{event.preventDefault();event.stopPropagation();saveGameForm(form);});}
 function viewGame(id){const game=getGame(id);if(!game)return;modalReturnFocus=document.activeElement;updateModal(detailModal(game,getData()));}
-function saveGameForm(form){guard(()=>{const game=fieldsToGame(form);saveGame(game);closeModal();render();toast('Jogo salvo na biblioteca!');});}
+function saveGameForm(form){guard(()=>{if(!form.reportValidity())return;const game=fieldsToGame(form);saveGame(game);const stored=getGame(game.id);if(!stored)throw Error('Não foi possível confirmar o jogo salvo.');closeModal();render();toast(`✓ ${game.name} adicionado à biblioteca!`);});}
 function fieldsToGame(form){const fd=new FormData(form);const csv=k=>String(fd.get(k)||'').split(',').map(x=>x.trim()).filter(Boolean);const name=String(fd.get('name')||'').trim();if(!name)throw Error('Informe o nome do jogo.');
  const old=getGame(String(fd.get('id'))) || {};
  const cover=String(fd.get('cover')||'').trim();if(cover&&!/^https?:\/\//i.test(cover))throw Error('A capa precisa ter um endereço http(s).');
