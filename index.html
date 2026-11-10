@@ -38,19 +38,19 @@
   <script>
     // Migração única do cache antigo do PWA. Preserva jogos e sessões do localStorage.
     (function(){
-      const release='qjh-repair-v5';
+      const release='qjh-repair-v6';
       if(sessionStorage.getItem(release))return;
       sessionStorage.setItem(release,'1');
       if(!('serviceWorker' in navigator))return;
       Promise.all([
         navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(reg=>reg.unregister()))),
         ('caches' in window)?caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('qual-jogo-hoje-')).map(k=>caches.delete(k)))):Promise.resolve()
-      ]).then(()=>{ const u=new URL(location.href);u.searchParams.set('release','5');location.replace(u.href); }).catch(()=>{});
+      ]).then(()=>{ const u=new URL(location.href);u.searchParams.set('release','6');location.replace(u.href); }).catch(()=>{});
     })();
     // Mesmo com código antigo, um formulário de jogo nunca deve virar parâmetros na URL.
     document.addEventListener('submit',function(e){if(e.target?.id==='game-form')e.preventDefault();},true);
   </script>
   <script src="./config.js"></script>
-  <script type="module" src="./js/main.js?release=5"></script>
+  <script type="module" src="./js/main.js?release=6"></script>
 </body>
 </html>
